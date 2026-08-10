@@ -36,7 +36,7 @@ export function UserMenu({
         <span className="sr-only">Your profile</span>
       </Link>
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex size-6 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+        <DropdownMenuTrigger className="hidden size-6 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:flex">
           <ChevronDown className="size-4" />
           <span className="sr-only">Open account menu</span>
         </DropdownMenuTrigger>
