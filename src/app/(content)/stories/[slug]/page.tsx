@@ -46,11 +46,13 @@ export default async function StoryDetailPage({ params }: { params: Promise<{ sl
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-10 sm:px-6">
       <article className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <UserAvatar avatarUrl={story.author.avatarUrl} displayName={story.author.displayName} />
-          <div className="flex flex-col leading-tight">
-            <span className="font-medium text-foreground">{story.author.displayName}</span>
-            <span>{formatRelativeTime(story.createdAt)}</span>
-          </div>
+          <Link href={`/profile/${story.author.username}`} className="flex items-center gap-2 hover:underline">
+            <UserAvatar avatarUrl={story.author.avatarUrl} displayName={story.author.displayName} />
+            <div className="flex flex-col leading-tight">
+              <span className="font-medium text-foreground">{story.author.displayName}</span>
+              <span>{formatRelativeTime(story.createdAt)}</span>
+            </div>
+          </Link>
           <VisibilityBadge visibility={story.visibility} className="ml-auto" />
         </div>
 
@@ -68,13 +70,14 @@ export default async function StoryDetailPage({ params }: { params: Promise<{ sl
             <span>With</span>
             <div className="flex -space-x-2">
               {otherContributors.map((c) => (
-                <UserAvatar
-                  key={c.id}
-                  avatarUrl={c.avatarUrl}
-                  displayName={c.displayName}
-                  size="sm"
-                  className="ring-2 ring-background"
-                />
+                <Link key={c.id} href={`/profile/${c.username}`}>
+                  <UserAvatar
+                    avatarUrl={c.avatarUrl}
+                    displayName={c.displayName}
+                    size="sm"
+                    className="ring-2 ring-background"
+                  />
+                </Link>
               ))}
             </div>
             <span>{otherContributors.map((c) => c.displayName).join(", ")}</span>

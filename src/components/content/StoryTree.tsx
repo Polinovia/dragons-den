@@ -12,22 +12,28 @@ export function StoryTree({ continuations }: { continuations: SketchDetail[] }) 
       </h2>
       <ul className="flex flex-col gap-3">
         {continuations.map((child) => (
-          <li key={child.id}>
-            <Link
-              href={`/sketches/${child.id}`}
-              className="block rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
-            >
-              <div className="mb-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <li
+            key={child.id}
+            className="relative rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+          >
+            <div className="mb-1 flex items-center gap-2 text-sm text-muted-foreground">
+              {/* Sits above the card-wide link below (relative + z-10), so clicking the
+                  author goes to their profile instead of the continuation. */}
+              <Link
+                href={`/profile/${child.author.username}`}
+                className="relative z-10 flex items-center gap-2 hover:underline"
+              >
                 <UserAvatar avatarUrl={child.author.avatarUrl} displayName={child.author.displayName} size="sm" />
                 <span className="font-medium text-foreground">{child.author.displayName}</span>
-              </div>
-              <p className="prose-content line-clamp-2 text-sm">{child.body}</p>
-              {child.continuationCount ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {child.continuationCount} further continuation{child.continuationCount === 1 ? "" : "s"}
-                </p>
-              ) : null}
-            </Link>
+              </Link>
+            </div>
+            <p className="prose-content line-clamp-2 text-sm">{child.body}</p>
+            {child.continuationCount ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {child.continuationCount} further continuation{child.continuationCount === 1 ? "" : "s"}
+              </p>
+            ) : null}
+            <Link href={`/sketches/${child.id}`} className="absolute inset-0 rounded-lg" aria-label="View continuation" />
           </li>
         ))}
       </ul>

@@ -29,8 +29,10 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
     <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10 sm:px-6">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <UserAvatar avatarUrl={collection.owner.avatarUrl} displayName={collection.owner.displayName} size="sm" />
-          <span>{collection.owner.displayName}</span>
+          <Link href={`/profile/${collection.owner.username}`} className="flex items-center gap-2 hover:underline">
+            <UserAvatar avatarUrl={collection.owner.avatarUrl} displayName={collection.owner.displayName} size="sm" />
+            <span>{collection.owner.displayName}</span>
+          </Link>
           <VisibilityBadge visibility={collection.visibility} className="ml-auto" />
         </div>
         <h1 className="font-serif text-3xl font-semibold">{collection.name}</h1>

@@ -63,11 +63,13 @@ export default async function SketchDetailPage({ params }: { params: Promise<{ i
 
       <article className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <UserAvatar avatarUrl={sketch.author.avatarUrl} displayName={sketch.author.displayName} />
-          <div className="flex flex-col leading-tight">
-            <span className="font-medium text-foreground">{sketch.author.displayName}</span>
-            <span>{formatRelativeTime(sketch.createdAt)}</span>
-          </div>
+          <Link href={`/profile/${sketch.author.username}`} className="flex items-center gap-2 hover:underline">
+            <UserAvatar avatarUrl={sketch.author.avatarUrl} displayName={sketch.author.displayName} />
+            <div className="flex flex-col leading-tight">
+              <span className="font-medium text-foreground">{sketch.author.displayName}</span>
+              <span>{formatRelativeTime(sketch.createdAt)}</span>
+            </div>
+          </Link>
           <VisibilityBadge visibility={sketch.visibility} className="ml-auto" />
         </div>
 

@@ -26,15 +26,28 @@ export function ContentCard({ item, className }: { item: ContentSummary; classNa
   const href = hrefFor(item);
   const KindIcon = KIND_ICON[item.kind];
 
-  const body = (
-    <Card className={cn("h-full", href && "transition-shadow hover:shadow-md hover:ring-foreground/20", className)}>
+  return (
+    <Card
+      className={cn(
+        "relative h-full",
+        href && "transition-shadow hover:shadow-md hover:ring-foreground/20",
+        className,
+      )}
+    >
       <CardHeader>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <UserAvatar avatarUrl={item.author.avatarUrl} displayName={item.author.displayName} size="sm" />
-          <span className="font-medium text-foreground">{item.author.displayName}</span>
+          {/* Sits above the card-wide link below (relative + z-10), so clicking the
+              author goes to their profile instead of the content. */}
+          <Link
+            href={`/profile/${item.author.username}`}
+            className="relative z-10 flex items-center gap-2 hover:underline"
+          >
+            <UserAvatar avatarUrl={item.author.avatarUrl} displayName={item.author.displayName} size="sm" />
+            <span className="font-medium text-foreground">{item.author.displayName}</span>
+          </Link>
           <span aria-hidden>·</span>
           <span>{formatRelativeTime(item.createdAt)}</span>
-          <VisibilityBadge visibility={item.visibility} className="ml-auto" />
+          <VisibilityBadge visibility={item.visibility} className="relative z-10 ml-auto" />
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
@@ -46,9 +59,9 @@ export function ContentCard({ item, className }: { item: ContentSummary; classNa
         {item.title ? <h3 className="font-serif text-lg leading-snug font-semibold">{item.title}</h3> : null}
         <p className="line-clamp-3 text-sm text-muted-foreground">{item.excerpt}</p>
         {item.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 pt-1">
+          <div className="relative z-10 flex flex-wrap gap-1.5 pt-1">
             {item.tags.slice(0, 4).map((tag) => (
-              <Tag key={tag} name={tag} />
+              <Tag key={tag} name={tag} linked />
             ))}
           </div>
         ) : null}
@@ -66,14 +79,14 @@ export function ContentCard({ item, className }: { item: ContentSummary; classNa
           ) : null}
         </div>
       </CardContent>
+
+      {href ? (
+        <Link
+          href={href}
+          className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          aria-label={item.title ?? item.excerpt}
+        />
+      ) : null}
     </Card>
-  );
-
-  if (!href) return body;
-
-  return (
-    <Link href={href} className="block h-full rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-      {body}
-    </Link>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -54,10 +55,14 @@ export function CommentSection({
         <ul className="flex flex-col gap-4">
           {topLevel.map((comment) => (
             <li key={comment.id} className="flex gap-3">
-              <UserAvatar avatarUrl={comment.author.avatarUrl} displayName={comment.author.displayName} size="sm" />
+              <Link href={`/profile/${comment.author.username}`}>
+                <UserAvatar avatarUrl={comment.author.avatarUrl} displayName={comment.author.displayName} size="sm" />
+              </Link>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="font-medium">{comment.author.displayName}</span>
+                  <Link href={`/profile/${comment.author.username}`} className="font-medium hover:underline">
+                    {comment.author.displayName}
+                  </Link>
                   <span className="text-muted-foreground">{formatRelativeTime(comment.createdAt)}</span>
                 </div>
                 <p className="text-sm whitespace-pre-line">{comment.body}</p>

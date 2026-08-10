@@ -48,8 +48,13 @@ export default async function ChapterPage({
         <h1 className="font-serif text-2xl font-semibold sm:text-3xl">{chapter.title}</h1>
         {chapter.author ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <UserAvatar avatarUrl={chapter.author.avatarUrl} displayName={chapter.author.displayName} size="sm" />
-            <span>{chapter.author.displayName}</span>
+            <Link
+              href={`/profile/${chapter.author.username}`}
+              className="flex items-center gap-2 hover:underline"
+            >
+              <UserAvatar avatarUrl={chapter.author.avatarUrl} displayName={chapter.author.displayName} size="sm" />
+              <span>{chapter.author.displayName}</span>
+            </Link>
             <span>· {formatRelativeTime(chapter.createdAt)}</span>
           </div>
         ) : null}
