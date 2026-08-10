@@ -4,9 +4,13 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { AuthError } from "next-auth";
 import { findUserByEmailOrUsername, createUser, findUserByEmail, updateUserPassword } from "@/lib/server/users";
+import { createPasswordResetToken, consumePasswordResetToken } from "@/lib/server/password-reset";
+import { sendPasswordResetEmail, isEmailConfigured } from "@/lib/server/email";
 import { signIn, signOut } from "@/lib/auth";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/auth";
 import { checkRateLimit } from "@/lib/server/rate-limit";
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export type AuthActionState = { error?: string };
 
@@ -104,49 +108,57 @@ export async function logoutAction(): Promise<void> {
   await signOut({ redirectTo: "/" });
 }
 
-export type CheckEmailState = { error?: string; checked?: boolean; found?: boolean; email?: string };
+export type RequestPasswordResetState = { error?: string; sent?: boolean; devResetUrl?: string };
 
-export async function checkEmailAction(
-  _prevState: CheckEmailState,
+export async function requestPasswordResetAction(
+  _prevState: RequestPasswordResetState,
   formData: FormData,
-): Promise<CheckEmailState> {
+): Promise<RequestPasswordResetState> {
   const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
   const ip = await clientIp();
-  const { allowed } = await checkRateLimit(`reset-check:${ip}`, 20, 60 * 60 * 1000);
-  if (!allowed) {
+  const [byEmail, byIp] = await Promise.all([
+    checkRateLimit(`reset-request:${parsed.data.email}`, 3, 60 * 60 * 1000),
+    checkRateLimit(`reset-request:${ip}`, 10, 60 * 60 * 1000),
+  ]);
+  if (!byEmail.allowed || !byIp.allowed) {
     return { error: RATE_LIMIT_MESSAGE };
   }
 
   const user = await findUserByEmail(parsed.data.email);
-  return { checked: true, found: !!user, email: parsed.data.email };
+  if (!user) {
+    // Same response whether the account exists or not, so this endpoint
+    // can't be used to discover which emails are registered.
+    return { sent: true };
+  }
+
+  const token = await createPasswordResetToken(user.id);
+  const resetUrl = `${BASE_URL}/reset-password?token=${token}`;
+  await sendPasswordResetEmail(parsed.data.email, resetUrl);
+
+  return { sent: true, devResetUrl: isEmailConfigured() ? undefined : resetUrl };
 }
 
-export async function resetPasswordAction(
+export async function confirmPasswordResetAction(
   _prevState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
   const parsed = resetPasswordSchema.safeParse({
-    email: formData.get("email"),
+    token: formData.get("token"),
     password: formData.get("password"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const { allowed } = await checkRateLimit(`reset-submit:${parsed.data.email}`, 3, 60 * 60 * 1000);
-  if (!allowed) {
-    return { error: RATE_LIMIT_MESSAGE };
+  const consumed = await consumePasswordResetToken(parsed.data.token);
+  if (!consumed) {
+    return { error: "This reset link is invalid or has expired." };
   }
 
-  const user = await findUserByEmail(parsed.data.email);
-  if (!user) {
-    return { error: "No account with that email." };
-  }
-
-  await updateUserPassword(user.id, parsed.data.password);
+  await updateUserPassword(consumed.userId, parsed.data.password);
   redirect("/login");
 }

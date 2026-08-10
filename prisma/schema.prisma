@@ -82,6 +82,8 @@ model User {
   notifications       Notification[] @relation("NotificationRecipient")
   notificationsCaused Notification[] @relation("NotificationActor")
 
+  passwordResetTokens PasswordResetToken[]
+
   @@map("users")
 }
 
@@ -352,6 +354,18 @@ model RateLimitAttempt {
   resetAt DateTime
 
   @@map("rate_limit_attempts")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid(2))
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model Notification {

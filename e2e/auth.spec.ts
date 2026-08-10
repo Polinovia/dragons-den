@@ -53,22 +53,39 @@ test.describe("already-authenticated redirects", () => {
 });
 
 test.describe("forgot / reset password", () => {
-  const email = "sam@example.com";
-  const newPassword = "brand-new-password-1";
+  const GENERIC_MESSAGE = "If that email has an account, we've sent a link to reset the password.";
 
-  test("unknown email shows not-found message", async ({ page }) => {
-    await page.goto("/forgot-password");
-    await page.getByLabel("Email").fill("nobody@example.com");
-    await page.getByRole("button", { name: "Find account" }).click();
-    await expect(page.getByText("No account with that email.")).toBeVisible();
-  });
-
-  test("known email allows setting a new password, then logging in with it", async ({ page }) => {
+  async function requestResetLink(page: import("@playwright/test").Page, email: string) {
     await page.goto("/forgot-password");
     await page.getByLabel("Email").fill(email);
-    await page.getByRole("button", { name: "Find account" }).click();
+    await page.getByRole("button", { name: "Send reset link" }).click();
+    await expect(page.getByText(GENERIC_MESSAGE)).toBeVisible();
+    // No RESEND_API_KEY in the test environment, so the action returns the
+    // reset link directly instead of emailing it (see playwright.config.ts).
+    const link = page.getByRole("link", { name: /\/reset-password\?token=/ });
+    await expect(link).toBeVisible();
+    const href = await link.getAttribute("href");
+    if (!href) throw new Error("Expected a dev-mode reset link in the response.");
+    return href;
+  }
 
-    await expect(page.getByText(email, { exact: false })).toBeVisible();
+  test("unknown and known emails get the same generic response (no enumeration)", async ({ page }) => {
+    await page.goto("/forgot-password");
+    await page.getByLabel("Email").fill("nobody@example.com");
+    await page.getByRole("button", { name: "Send reset link" }).click();
+    await expect(page.getByText(GENERIC_MESSAGE)).toBeVisible();
+    // Unknown email: no account, so no dev-mode link is shown.
+    await expect(page.getByRole("link", { name: /\/reset-password\?token=/ })).toHaveCount(0);
+
+    await requestResetLink(page, "kit@example.com");
+  });
+
+  test("reset link sets a new password, then logging in with it works", async ({ page }) => {
+    const email = "sam@example.com";
+    const newPassword = "brand-new-password-1";
+
+    const href = await requestResetLink(page, email);
+    await page.goto(href);
     await page.getByLabel("New password").fill(newPassword);
     await page.getByLabel("Confirm password").fill(newPassword);
     await page.getByRole("button", { name: "Set new password" }).click();
@@ -78,17 +95,47 @@ test.describe("forgot / reset password", () => {
     await expect(page).toHaveURL(/\/feed$/);
   });
 
+  test("a reset link can only be used once", async ({ page }) => {
+    const email = "noor@example.com";
+    const newPassword = "used-once-password-1";
+
+    const href = await requestResetLink(page, email);
+    await page.goto(href);
+    await page.getByLabel("New password").fill(newPassword);
+    await page.getByLabel("Confirm password").fill(newPassword);
+    await page.getByRole("button", { name: "Set new password" }).click();
+    await page.waitForURL("**/login");
+
+    await page.goto(href);
+    await page.getByLabel("New password").fill("second-attempt-password-1");
+    await page.getByLabel("Confirm password").fill("second-attempt-password-1");
+    await page.getByRole("button", { name: "Set new password" }).click();
+    await expect(page.getByText("This reset link is invalid or has expired.")).toBeVisible();
+  });
+
   test("mismatched passwords are rejected client-side", async ({ page }) => {
-    await page.goto("/forgot-password");
-    await page.getByLabel("Email").fill("jules@example.com");
-    await page.getByRole("button", { name: "Find account" }).click();
+    const href = await requestResetLink(page, "jules@example.com");
+    await page.goto(href);
 
     await page.getByLabel("New password").fill("password-one-1");
     await page.getByLabel("Confirm password").fill("password-two-2");
     await page.getByRole("button", { name: "Set new password" }).click();
 
     await expect(page.getByText("Passwords don't match.")).toBeVisible();
-    await expect(page).toHaveURL(/\/forgot-password$/);
+  });
+
+  test("missing token shows an error with a way back", async ({ page }) => {
+    await page.goto("/reset-password");
+    await expect(page.getByText("This reset link is missing its token.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Request a new link" })).toBeVisible();
+  });
+
+  test("garbage token is rejected on submit", async ({ page }) => {
+    await page.goto("/reset-password?token=totally-made-up-garbage-token");
+    await page.getByLabel("New password").fill("whatever-password-1");
+    await page.getByLabel("Confirm password").fill("whatever-password-1");
+    await page.getByRole("button", { name: "Set new password" }).click();
+    await expect(page.getByText("This reset link is invalid or has expired.")).toBeVisible();
   });
 });
 

@@ -1,100 +1,54 @@
 "use client";
 
-import { useActionState, useState, type FormEvent } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
-import {
-  checkEmailAction,
-  resetPasswordAction,
-  type CheckEmailState,
-  type AuthActionState,
-} from "@/actions/auth";
+import { requestPasswordResetAction, type RequestPasswordResetState } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const initialCheckState: CheckEmailState = {};
-const initialResetState: AuthActionState = {};
+const initialState: RequestPasswordResetState = {};
 
 export function ForgotPasswordForm() {
-  const [checkState, checkFormAction, checkPending] = useActionState(checkEmailAction, initialCheckState);
-  const [resetState, resetFormAction, resetPending] = useActionState(resetPasswordAction, initialResetState);
-  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [state, formAction, isPending] = useActionState(requestPasswordResetAction, initialState);
 
-  function handleResetSubmit(e: FormEvent<HTMLFormElement>) {
-    const form = e.currentTarget;
-    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
-    const confirm = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value;
-    if (password !== confirm) {
-      e.preventDefault();
-      setConfirmError("Passwords don't match.");
-    } else {
-      setConfirmError(null);
-    }
-  }
-
-  if (checkState.checked && checkState.found && checkState.email) {
+  if (state.sent) {
     return (
-      <form action={resetFormAction} onSubmit={handleResetSubmit} className="flex flex-col gap-4">
-        <input type="hidden" name="email" value={checkState.email} />
-
+      <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          Account found for <span className="font-medium text-foreground">{checkState.email}</span>. Set a new
-          password below.
+          If that email has an account, we&apos;ve sent a link to reset the password. It expires in an hour.
         </p>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">New password</Label>
-          <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="confirmPassword">Confirm password</Label>
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-          />
-        </div>
-
-        {confirmError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {confirmError}
-          </p>
-        ) : resetState.error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {resetState.error}
+        {state.devResetUrl ? (
+          <p className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
+            Email sending isn&apos;t configured yet (no <code>RESEND_API_KEY</code>), so here&apos;s the link
+            directly for local testing:{" "}
+            <Link href={state.devResetUrl} className="break-all font-medium text-foreground underline underline-offset-2">
+              {state.devResetUrl}
+            </Link>
           </p>
         ) : null}
-
-        <Button type="submit" disabled={resetPending} className="mt-1">
-          {resetPending ? "Setting password…" : "Set new password"}
-        </Button>
-      </form>
+        <Link href="/login" className="text-sm font-medium text-foreground underline underline-offset-2">
+          Back to sign in
+        </Link>
+      </div>
     );
   }
 
   return (
-    <form action={checkFormAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" required autoComplete="email" />
       </div>
 
-      {checkState.checked && !checkState.found ? (
+      {state.error ? (
         <p role="alert" className="text-sm text-destructive">
-          No account with that email.
-        </p>
-      ) : checkState.error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {checkState.error}
+          {state.error}
         </p>
       ) : null}
 
-      <Button type="submit" disabled={checkPending} className="mt-1">
-        {checkPending ? "Checking…" : "Find account"}
+      <Button type="submit" disabled={isPending} className="mt-1">
+        {isPending ? "Sending…" : "Send reset link"}
       </Button>
 
       <p className="text-sm text-muted-foreground">

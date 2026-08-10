@@ -6,13 +6,13 @@ import { loginAs } from "./helpers";
 // email) shared with the rest of the suite.
 
 test("avatar link goes straight to the signed-in user's own profile", async ({ page }) => {
-  await loginAs(page, "noor@example.com");
+  await loginAs(page, "kit@example.com");
   await page.getByRole("link", { name: "Your profile" }).click();
-  await expect(page).toHaveURL(/\/profile\/noor$/);
+  await expect(page).toHaveURL(/\/profile\/kit$/);
 });
 
 test("account chevron opens the menu without crashing", async ({ page }) => {
-  await loginAs(page, "noor@example.com");
+  await loginAs(page, "kit@example.com");
   await page.getByRole("button", { name: "Open account menu" }).click();
   await expect(page.getByRole("menuitem", { name: "Settings" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
