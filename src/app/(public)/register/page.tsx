@@ -1,11 +1,16 @@
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { auth } from "@/lib/auth";
 import { RegisterForm } from "@/components/forms/RegisterForm";
 
 export const metadata: Metadata = {
   title: "Create account",
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const session = await auth();
+  if (session?.user) redirect("/feed");
+
   return (
     <div className="mx-auto flex min-h-[70vh] w-full max-w-sm flex-col justify-center gap-8 px-4 py-16">
       <div className="flex flex-col gap-1">
