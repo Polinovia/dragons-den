@@ -16,11 +16,9 @@ import {
 
 type MobileNavProps = {
   isAuthed: boolean;
-  username?: string;
-  displayName?: string;
 };
 
-export function MobileNav({ isAuthed, username, displayName }: MobileNavProps) {
+export function MobileNav({ isAuthed }: MobileNavProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -45,13 +43,6 @@ export function MobileNav({ isAuthed, username, displayName }: MobileNavProps) {
               </Link>
               <Link href="/create" onClick={() => setOpen(false)} className="rounded-md px-2 py-2.5 hover:bg-accent">
                 Create
-              </Link>
-              <Link
-                href={`/profile/${username}`}
-                onClick={() => setOpen(false)}
-                className="rounded-md px-2 py-2.5 hover:bg-accent"
-              >
-                {displayName ?? "Your profile"}
               </Link>
               <Link href="/settings" onClick={() => setOpen(false)} className="rounded-md px-2 py-2.5 hover:bg-accent">
                 Settings

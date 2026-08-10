@@ -47,7 +47,7 @@ export async function SiteHeader() {
               </Button>
             </div>
           )}
-          <MobileNav isAuthed={!!user} username={user?.username} displayName={user?.displayName} />
+          <MobileNav isAuthed={!!user} />
         </div>
       </div>
     </header>
