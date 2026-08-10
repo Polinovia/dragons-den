@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Fraunces, Inter } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -19,6 +20,18 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: { default: "Dragon's Den", template: "%s · Dragon's Den" },
   description: "A cozy space for unfinished ideas — sketches, stories, and thoughts shared among friends.",
+  appleWebApp: {
+    capable: true,
+    title: "Dragon's Den",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf6ee" },
+    { media: "(prefers-color-scheme: dark)", color: "#211a15" },
+  ],
 };
 
 // Applies a saved theme before first paint, so there's no flash of the wrong
@@ -39,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <Toaster position="bottom-right" />
         </TooltipProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
