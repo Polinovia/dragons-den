@@ -346,6 +346,14 @@ model Like {
   @@map("likes")
 }
 
+model RateLimitAttempt {
+  key     String   @id
+  count   Int      @default(1)
+  resetAt DateTime
+
+  @@map("rate_limit_attempts")
+}
+
 model Notification {
   id          String           @id @default(cuid(2))
   recipientId String

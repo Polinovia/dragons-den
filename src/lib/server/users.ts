@@ -8,6 +8,15 @@ export async function findUserByEmailOrUsername(email: string, username: string)
   });
 }
 
+export async function findUserByEmail(email: string) {
+  return prisma.user.findUnique({ where: { email }, select: { id: true } });
+}
+
+export async function updateUserPassword(userId: string, password: string) {
+  const passwordHash = await hashPassword(password);
+  return prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+}
+
 export async function createUser(data: {
   email: string;
   username: string;
