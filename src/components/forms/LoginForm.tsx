@@ -22,13 +22,14 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="password">Password</Label>
-          <Link href="/forgot-password" className="text-sm text-muted-foreground underline underline-offset-2">
-            Forgot password?
-          </Link>
-        </div>
+        <Label htmlFor="password">Password</Label>
         <Input id="password" name="password" type="password" required autoComplete="current-password" />
+        <Link
+          href="/forgot-password"
+          className="self-start text-sm text-muted-foreground underline underline-offset-2"
+        >
+          Forgot password?
+        </Link>
       </div>
 
       {state.error ? (
