@@ -1,4 +1,10 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import authConfig from "@/lib/auth.config";
+
+// Uses the edge-safe config (no Credentials provider / Prisma) — see
+// auth.config.ts for why. This instance only ever reads the existing session
+// cookie here, it never needs to look anything up in the database.
+const { auth } = NextAuth(authConfig);
 
 const protectedPrefixes = ["/feed", "/create", "/settings"];
 
