@@ -13,6 +13,25 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // Privacy boundary: only lib/server/** may query content models directly.
+    // Everything else (pages, components, server actions) must go through those
+    // helpers, so visibility filtering can never be accidentally skipped.
+    files: ["src/app/**/*.{ts,tsx}", "src/actions/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/lib/prisma",
+              message: "Query content models through @/lib/server/* helpers, not prisma directly, so visibility filtering can't be bypassed.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -1,0 +1,12 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { SiteShell } from "@/components/nav/SiteShell";
+
+export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  return <SiteShell>{children}</SiteShell>;
+}
