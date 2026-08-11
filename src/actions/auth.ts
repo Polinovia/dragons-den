@@ -163,7 +163,12 @@ export async function requestPasswordResetAction(
   const resetUrl = `${BASE_URL}/reset-password?token=${token}`;
   await sendPasswordResetEmail(parsed.data.email, resetUrl);
 
-  return { sent: true, devResetUrl: isEmailConfigured() ? undefined : resetUrl };
+  // The dev-fallback link only ever appears outside production, even if
+  // RESEND_API_KEY isn't configured -- in production that combination means
+  // "email silently isn't sent yet," never "hand the reset link to whoever
+  // asked for it." Anyone can hit this action with anyone else's email.
+  const showDevFallback = !isEmailConfigured() && process.env.NODE_ENV !== "production";
+  return { sent: true, devResetUrl: showDevFallback ? resetUrl : undefined };
 }
 
 export async function confirmPasswordResetAction(
