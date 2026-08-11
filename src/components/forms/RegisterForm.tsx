@@ -6,6 +6,8 @@ import { registerAction, type AuthActionState } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SECURITY_QUESTIONS } from "@/lib/security-questions";
 
 const initialState: AuthActionState = {};
 
@@ -40,6 +42,27 @@ export function RegisterForm() {
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="password">Password</Label>
         <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="securityQuestion">Security question</Label>
+        <Select name="securityQuestion" required>
+          <SelectTrigger id="securityQuestion" className="w-full">
+            <SelectValue placeholder="Choose a question" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(SECURITY_QUESTIONS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="securityAnswer">Answer</Label>
+        <Input id="securityAnswer" name="securityAnswer" type="text" required autoComplete="off" />
       </div>
 
       {state.error ? (

@@ -52,6 +52,11 @@ export function ForgotPasswordForm() {
       </Button>
 
       <p className="text-sm text-muted-foreground">
+        <Link href="/forgot-password/security-question" className="font-medium text-foreground underline underline-offset-2">
+          Answer a security question instead
+        </Link>
+      </p>
+      <p className="text-sm text-muted-foreground">
         <Link href="/login" className="font-medium text-foreground underline underline-offset-2">
           Back to sign in
         </Link>

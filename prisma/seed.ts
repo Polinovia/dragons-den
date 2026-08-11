@@ -7,6 +7,7 @@ import {
   CollectionItemType,
   FriendshipStatus,
   NotificationType,
+  SecurityQuestion,
 } from "@prisma/client";
 import { hashPassword } from "../src/lib/password";
 import { slugify } from "../src/lib/slug";
@@ -46,6 +47,8 @@ async function main() {
       pronouns: "she/her",
       location: "Lagos",
       avatarUrl: "/avatars/mira.svg",
+      securityQuestion: SecurityQuestion.FIRST_PET,
+      securityAnswer: "Whiskers",
     },
     {
       username: "theo",
@@ -55,6 +58,8 @@ async function main() {
       pronouns: "he/him",
       location: "Malmö",
       avatarUrl: "/avatars/theo.svg",
+      securityQuestion: SecurityQuestion.CHILDHOOD_STREET,
+      securityAnswer: "Storgatan",
     },
     {
       username: "priya",
@@ -64,6 +69,8 @@ async function main() {
       pronouns: "she/her",
       location: "Chennai",
       avatarUrl: "/avatars/priya.svg",
+      securityQuestion: SecurityQuestion.FAVORITE_TEACHER,
+      securityAnswer: "Mrs Iyer",
     },
     {
       username: "sam",
@@ -73,6 +80,8 @@ async function main() {
       pronouns: "they/them",
       location: "Accra",
       avatarUrl: "/avatars/sam.svg",
+      securityQuestion: SecurityQuestion.FIRST_SCHOOL,
+      securityAnswer: "Osu Presby",
     },
     {
       username: "jules",
@@ -82,6 +91,8 @@ async function main() {
       pronouns: "they/them",
       location: "Gothenburg",
       avatarUrl: "/avatars/jules.svg",
+      securityQuestion: SecurityQuestion.MOTHERS_MAIDEN_NAME,
+      securityAnswer: "Lindberg",
     },
     {
       username: "ana",
@@ -91,6 +102,8 @@ async function main() {
       pronouns: "she/her",
       location: "Porto",
       avatarUrl: "/avatars/ana.svg",
+      securityQuestion: SecurityQuestion.FIRST_PET,
+      securityAnswer: "Pistachio",
     },
     {
       username: "kit",
@@ -100,6 +113,8 @@ async function main() {
       pronouns: "he/they",
       location: "Bristol",
       avatarUrl: "/avatars/kit.svg",
+      securityQuestion: SecurityQuestion.CHILDHOOD_STREET,
+      securityAnswer: "Elm Close",
     },
     {
       username: "noor",
@@ -109,16 +124,21 @@ async function main() {
       pronouns: "she/her",
       location: "Amman",
       avatarUrl: "/avatars/noor.svg",
+      securityQuestion: SecurityQuestion.FAVORITE_TEACHER,
+      securityAnswer: "Mr Haddad",
     },
   ];
 
   const users: Record<string, { id: string }> = {};
   for (const def of userDefs) {
+    const securityAnswerHash = await hashPassword(def.securityAnswer.trim().toLowerCase());
     const user = await prisma.user.create({
       data: {
         username: def.username,
         email: def.email,
         passwordHash,
+        securityQuestion: def.securityQuestion,
+        securityAnswerHash,
         profile: {
           create: {
             displayName: def.displayName,
@@ -593,7 +613,7 @@ async function main() {
   console.log("Seed complete.");
   console.log(`Demo users (password for all: "${DEMO_PASSWORD}"):`);
   for (const def of userDefs) {
-    console.log(`  ${def.email}  (@${def.username})`);
+    console.log(`  ${def.email}  (@${def.username})  security question: ${def.securityQuestion} = "${def.securityAnswer}"`);
   }
 }
 

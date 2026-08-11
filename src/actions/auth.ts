@@ -3,12 +3,27 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { AuthError } from "next-auth";
-import { findUserByEmailOrUsername, createUser, findUserByEmail, updateUserPassword } from "@/lib/server/users";
+import {
+  findUserByEmailOrUsername,
+  createUser,
+  findUserByEmail,
+  updateUserPassword,
+  getSecurityQuestionForEmail,
+  verifySecurityAnswer,
+} from "@/lib/server/users";
 import { createPasswordResetToken, consumePasswordResetToken } from "@/lib/server/password-reset";
 import { sendPasswordResetEmail, isEmailConfigured } from "@/lib/server/email";
 import { signIn, signOut } from "@/lib/auth";
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/auth";
+import {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  getSecurityQuestionSchema,
+  resetWithSecurityAnswerSchema,
+} from "@/lib/validations/auth";
 import { checkRateLimit } from "@/lib/server/rate-limit";
+import type { SecurityQuestionValue } from "@/lib/security-questions";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -36,13 +51,15 @@ export async function registerAction(
     username: formData.get("username"),
     email: formData.get("email"),
     password: formData.get("password"),
+    securityQuestion: formData.get("securityQuestion"),
+    securityAnswer: formData.get("securityAnswer"),
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const { displayName, username, email, password } = parsed.data;
+  const { displayName, username, email, password, securityQuestion, securityAnswer } = parsed.data;
 
   const existing = await findUserByEmailOrUsername(email, username);
   if (existing) {
@@ -54,7 +71,14 @@ export async function registerAction(
     };
   }
 
-  await createUser({ email, username, password, displayName });
+  await createUser({
+    email,
+    username,
+    password,
+    displayName,
+    securityQuestion: securityQuestion as SecurityQuestionValue,
+    securityAnswer,
+  });
 
   try {
     await signIn("credentials", { email, password, redirectTo: "/feed" });
@@ -160,5 +184,63 @@ export async function confirmPasswordResetAction(
   }
 
   await updateUserPassword(consumed.userId, parsed.data.password);
+  redirect("/login");
+}
+
+export type GetSecurityQuestionState = {
+  error?: string;
+  checked?: boolean;
+  found?: boolean;
+  email?: string;
+  question?: SecurityQuestionValue;
+};
+
+export async function getSecurityQuestionAction(
+  _prevState: GetSecurityQuestionState,
+  formData: FormData,
+): Promise<GetSecurityQuestionState> {
+  const parsed = getSecurityQuestionSchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const ip = await clientIp();
+  const { allowed } = await checkRateLimit(`security-question:${ip}`, 20, 60 * 60 * 1000);
+  if (!allowed) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
+
+  const result = await getSecurityQuestionForEmail(parsed.data.email);
+  if (!result) {
+    return { checked: true, found: false };
+  }
+
+  return { checked: true, found: true, email: parsed.data.email, question: result.question as SecurityQuestionValue };
+}
+
+export async function resetWithSecurityAnswerAction(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = resetWithSecurityAnswerSchema.safeParse({
+    email: formData.get("email"),
+    securityAnswer: formData.get("securityAnswer"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const { allowed } = await checkRateLimit(`security-answer:${parsed.data.email}`, 5, 60 * 60 * 1000);
+  if (!allowed) {
+    return { error: RATE_LIMIT_MESSAGE };
+  }
+
+  const verified = await verifySecurityAnswer(parsed.data.email, parsed.data.securityAnswer);
+  if (!verified) {
+    return { error: "That answer doesn't match." };
+  }
+
+  await updateUserPassword(verified.userId, parsed.data.password);
   redirect("/login");
 }

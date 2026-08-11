@@ -9,6 +9,9 @@ test.describe("registration", () => {
     await page.getByLabel("Username").fill(`testuser${suffix}`);
     await page.getByLabel("Email").fill(`testuser${suffix}@example.com`);
     await page.getByLabel("Password").fill("a-strong-password");
+    await page.getByRole("combobox", { name: "Security question" }).click();
+    await page.getByRole("option", { name: "What was the name of your first pet?" }).click();
+    await page.getByLabel("Answer").fill("Rex");
     await page.getByRole("button", { name: "Create account" }).click();
     await page.waitForURL("**/feed");
     await expect(page.getByRole("link", { name: "Your profile" })).toBeVisible();
@@ -136,6 +139,60 @@ test.describe("forgot / reset password", () => {
     await page.getByLabel("Confirm password").fill("whatever-password-1");
     await page.getByRole("button", { name: "Set new password" }).click();
     await expect(page.getByText("This reset link is invalid or has expired.")).toBeVisible();
+  });
+});
+
+test.describe("security question reset", () => {
+  test("wrong answer is rejected", async ({ page }) => {
+    await page.goto("/forgot-password/security-question");
+    await page.getByLabel("Email").fill("theo@example.com");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByText("What street did you grow up on?")).toBeVisible();
+
+    await page.getByLabel("Answer").fill("Definitely Not Storgatan");
+    await page.getByLabel("New password").fill("wont-work-password-1");
+    await page.getByLabel("Confirm password").fill("wont-work-password-1");
+    await page.getByRole("button", { name: "Set new password" }).click();
+    await expect(page.getByText("That answer doesn't match.")).toBeVisible();
+  });
+
+  test("correct answer resets the password, then logging in with it works", async ({ page }) => {
+    const email = "priya@example.com";
+    const newPassword = "priya-security-reset-1";
+
+    await page.goto("/forgot-password/security-question");
+    await page.getByLabel("Email").fill(email);
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByText("Who was your favorite teacher?")).toBeVisible();
+
+    await page.getByLabel("Answer").fill("Mrs Iyer");
+    await page.getByLabel("New password").fill(newPassword);
+    await page.getByLabel("Confirm password").fill(newPassword);
+    await page.getByRole("button", { name: "Set new password" }).click();
+
+    await page.waitForURL("**/login");
+    await loginAs(page, email, newPassword);
+    await expect(page).toHaveURL(/\/feed$/);
+  });
+
+  test("mismatched passwords are rejected client-side", async ({ page }) => {
+    await page.goto("/forgot-password/security-question");
+    await page.getByLabel("Email").fill("kit@example.com");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByText("What street did you grow up on?")).toBeVisible();
+
+    await page.getByLabel("Answer").fill("Elm Close");
+    await page.getByLabel("New password").fill("password-one-1");
+    await page.getByLabel("Confirm password").fill("password-two-2");
+    await page.getByRole("button", { name: "Set new password" }).click();
+    await expect(page.getByText("Passwords don't match.")).toBeVisible();
+  });
+
+  test("unknown email shows not-found message", async ({ page }) => {
+    await page.goto("/forgot-password/security-question");
+    await page.getByLabel("Email").fill("nobody@example.com");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByText("No account with that email.")).toBeVisible();
   });
 });
 

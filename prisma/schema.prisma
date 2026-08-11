@@ -54,13 +54,23 @@ enum NotificationType {
   CHAPTER_PUBLISHED
 }
 
+enum SecurityQuestion {
+  FIRST_PET
+  CHILDHOOD_STREET
+  MOTHERS_MAIDEN_NAME
+  FIRST_SCHOOL
+  FAVORITE_TEACHER
+}
+
 model User {
-  id           String   @id @default(cuid(2))
-  email        String   @unique
-  username     String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String            @id @default(cuid(2))
+  email              String            @unique
+  username           String            @unique
+  passwordHash       String
+  securityQuestion   SecurityQuestion?
+  securityAnswerHash String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   profile Profile?
 
